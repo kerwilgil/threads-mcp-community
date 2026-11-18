@@ -1,0 +1,13 @@
+#!/bin/sh
+# stdio launcher: publication gate in front of the threads-mcp launcher. Use this as the MCP command
+# when you want every publication to require an entry in the approved-publications registry.
+# stdout is reserved for the MCP protocol; errors go to stderr.
+#
+# THREADS_GATE_DIR       gate directory (default: the directory above this script)
+# THREADS_MCP_LAUNCHER   threads-mcp launcher (default: <repo>/bin/threads-mcp-launcher)
+# THREADS_GATE_PYTHON    Python 3.11+ used for the gate (default: python3)
+set -eu
+GATE_DIR="${THREADS_GATE_DIR:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}"
+REAL="${THREADS_MCP_LAUNCHER:-$GATE_DIR/../bin/threads-mcp-launcher}"
+PY="${THREADS_GATE_PYTHON:-python3}"
+exec "$PY" "$GATE_DIR/threads_publication_gate.py" proxy -- "$REAL" "$@"

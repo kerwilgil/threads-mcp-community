@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "threads-mcp"
+version = "0.1.0"
+description = "Controlled MCP server for publishing approved content to Meta Threads through the official API."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["mcp", "threads", "meta", "model-context-protocol", "publishing"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+  "cryptography>=46,<47",
+  "httpx>=0.28,<1",
+  "mcp>=2.3,<3",
+  "pydantic>=2.12,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=9,<10",
+  "ruff>=0.14,<1",
+]
+
+[project.urls]
+Repository = "https://github.com/kerwilgil/threads-mcp-community"
+Issues = "https://github.com/kerwilgil/threads-mcp-community/issues"
+Changelog = "https://github.com/kerwilgil/threads-mcp-community/blob/main/CHANGELOG.md"
+
+[project.scripts]
+threads-mcp = "threads_mcp.server:main"
+threads-mcp-auth = "threads_mcp.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/threads_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "gate/tests"]
+addopts = "-q --basetemp=.pytest-tmp"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["pytest-of-*", ".pytest-*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]

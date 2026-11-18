@@ -1,0 +1,12 @@
+#!/bin/sh
+# Recommended stdio entry point for an MCP host: supervisor -> publication gate -> threads-mcp launcher.
+# The supervisor keeps the host connected when the gate or the backend exits; the gate enforces the
+# approved-publications registry. stdout is only the MCP protocol.
+#
+# THREADS_GATE_PYTHON  Python 3.11+ used for the supervisor and the gate (default: python3)
+set -eu
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+PY="${THREADS_GATE_PYTHON:-python3}"
+exec "$PY" "$ROOT/supervisor/threads_stdio_supervisor.py" -- \
+    "$PY" "$ROOT/gate/threads_publication_gate.py" proxy -- \
+    "$ROOT/bin/threads-mcp-launcher" "$@"

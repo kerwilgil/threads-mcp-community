@@ -1,0 +1,45 @@
+#!/bin/sh
+# POSIX stdio launcher for threads-mcp. Run it from an MCP host (directly, or through the publication
+# gate and the supervisor, see README.md).
+#
+#   threads-mcp-launcher            MCP server on stdio
+#   threads-mcp-launcher auth ARGS  threads-mcp-auth ARGS (OAuth setup is CLI-only, e.g. `auth status`)
+#
+# Expected layout: this script lives in <repo>/bin and the virtualenv with the package is <repo>/.venv
+# (created by the install step in README.md). Override with:
+#   THREADS_MCP_RUNTIME  directory that contains bin/ and the virtualenv (default: the repository root)
+#   THREADS_MCP_VENV     virtualenv directory (default: $THREADS_MCP_RUNTIME/.venv)
+#
+# Persistent state lives outside the repository (XDG paths, defaults ~/.config and ~/.local/state):
+#   $XDG_CONFIG_HOME/threads-mcp/encryption.key      Fernet key (mode 600, directory 700); never printed
+#   $XDG_CONFIG_HOME/threads-mcp/token.enc           encrypted Threads token written by `threads-mcp-auth exchange`
+#   $XDG_STATE_HOME/threads-mcp/publications.sqlite3 publication ledger (duplicate protection)
+#   $XDG_STATE_HOME/threads-mcp/oauth-state.json     pending OAuth state
+#
+# stdout is reserved for the MCP protocol; errors go to stderr.
+set -eu
+
+RUNTIME="${THREADS_MCP_RUNTIME:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}"
+VENV="${THREADS_MCP_VENV:-$RUNTIME/.venv}"
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}/threads-mcp"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/threads-mcp"
+
+umask 077
+
+if [ "${1:-}" = "auth" ]; then
+  shift
+  BIN="$VENV/bin/threads-mcp-auth"
+else
+  BIN="$VENV/bin/threads-mcp"
+fi
+[ -x "$BIN" ] || { echo "threads-mcp: missing executable $BIN (install the package first, see README.md)" >&2; exit 1; }
+
+[ -r "$CONF/encryption.key" ] || { echo "threads-mcp: missing $CONF/encryption.key (see README.md, step 3)" >&2; exit 1; }
+TOKEN_ENCRYPTION_KEY="$(tr -d '\r\n' < "$CONF/encryption.key")"
+[ -n "$TOKEN_ENCRYPTION_KEY" ] || { echo "threads-mcp: $CONF/encryption.key is empty" >&2; exit 1; }
+export TOKEN_ENCRYPTION_KEY
+export THREADS_TOKEN_STORE="$CONF/token.enc"
+export THREADS_LEDGER_PATH="$STATE/publications.sqlite3"
+export THREADS_OAUTH_STATE_PATH="$STATE/oauth-state.json"
+
+exec "$BIN" "$@"
